@@ -1,0 +1,4 @@
+httplib2==0.9
+oauth2==1.5.211
+redis==2.9.1
+requests==2.3.0
