@@ -67,14 +67,20 @@ class DockerServiceStatus(ServiceStatus):
 		return "website"
 
 	def status(self):
-		r = requests.get('%s/srv/status' % config.DISCOURSE_URL)
-		return {"ok": (True if r.text == 'ok' else False),
-			"extra": r.status_code}
+		try:
+			r = requests.get('%s/srv/status' % config.DISCOURSE_URL)
+			return {"ok": (True if r.text == 'ok' else False),
+				"extra": r.status_code}
+		except requests.ConnectionError:
+			return {"ok": False, "extra": "Connection refused"}
 
 
 class SidekiqServiceStatus(ServiceStatus):
 	def __init__(self):
-		self.r_server = redis.Redis("localhost")
+		try:
+			self.r_server = redis.Redis("localhost")
+		except redis.ConnectionError:
+			raise Exception('connection error')
 
 	def get_service(self):
 		return "sidekiq"
@@ -113,9 +119,12 @@ class SidekiqServiceStatus(ServiceStatus):
 			"extra": extra_json}
 
 def main():
-	sidekiq_status = SidekiqServiceStatus()
-	jobs_status = sidekiq_status.status()
-	print jobs_status
+	try:
+		sidekiq_status = SidekiqServiceStatus()
+		jobs_status = sidekiq_status.status()
+		print jobs_status
+	except:
+		jobs_status = {"ok": False, "extra": "Connection error"}
 
 	docker_service_status = DockerServiceStatus()
 	docker_status = docker_service_status.status()
