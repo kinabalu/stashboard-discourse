@@ -22,8 +22,8 @@ class StashboardClient(object):
 
 	def get_current_status(self, service):
 		resp, content = self.client.request( self.base_admin_url + "/services/" + service + "/events/current", "GET")
-		print resp['status']
-		print content
+		#print resp['status']
+		#print content
 		if resp['status'] != "200":
 			if resp['status'] == '404':
 				return 'Fail'
@@ -45,6 +45,8 @@ class StashboardClient(object):
 		event = json.loads(content)
 		if resp['status'] != '200':
 			raise Exception(event['message'])
+
+	
 		return event
 
 	@staticmethod	
@@ -78,9 +80,12 @@ class DockerServiceStatus(ServiceStatus):
 class SidekiqServiceStatus(ServiceStatus):
 	def __init__(self):
 		try:
-			self.r_server = redis.Redis("localhost")
+			self.r_server = redis.Redis("0.0.0.0")
 		except redis.ConnectionError:
+			print 'Connection error'
 			raise Exception('connection error')
+		except:
+			print 'Something went wrong'
 
 	def get_service(self):
 		return "sidekiq"
@@ -122,7 +127,7 @@ def main():
 	try:
 		sidekiq_status = SidekiqServiceStatus()
 		jobs_status = sidekiq_status.status()
-		print jobs_status
+		#print jobs_status
 	except:
 		jobs_status = {"ok": False, "extra": "Connection error"}
 
@@ -132,12 +137,13 @@ def main():
 
 	client = StashboardClient()
 	client.post_event(("up" if jobs_status['ok'] else "down"),
-				"sidekiq",
+				sidekiq_status.get_service(),
 				jobs_status['extra'])
 
 	client.post_event(("up" if docker_status['ok'] else "down"),
-				"website",
+				docker_service_status.get_service(),
 				docker_status['extra'])
+		
 
 if __name__ == '__main__':
 	main()
