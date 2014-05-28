@@ -13,8 +13,8 @@ except ImportError:
 class StashboardClient(object):
 
 	def __init__(self):
-		self.client = StashboardClient.build_client(config.CONSUMER_KEY, 
-								config.CONSUMER_SECRET, 
+		self.client = StashboardClient.build_client(config.CONSUMER_KEY,
+								config.CONSUMER_SECRET,
 								config.OAUTH_KEY,
 								config.OAUTH_SECRET)
 		self.base_admin_url = "%s/admin/api/v1" % config.BASE_URL
@@ -46,10 +46,10 @@ class StashboardClient(object):
 		if resp['status'] != '200':
 			raise Exception(event['message'])
 
-	
+
 		return event
 
-	@staticmethod	
+	@staticmethod
 	def build_client(consumer_key, consumer_secret, oauth_key, oauth_secret):
 		consumer = oauth2.Consumer(key=consumer_key, secret=consumer_secret)
 		token = oauth2.Token(oauth_key, oauth_secret)
@@ -116,8 +116,8 @@ class SidekiqServiceStatus(ServiceStatus):
 			status_obj = json.loads(status_json)
 			status_txt = status_obj['prev_result']
 			sidekiq_jobs[sidekiq_job] = status_txt
-			if status_txt != 'OK':
-				status = False				
+			if status_txt != 'OK' and status_txt != 'RUNNING':
+				status = False
 
 		extra_json = json.dumps(sidekiq_jobs)
 		return {"ok": status,
@@ -143,8 +143,7 @@ def main():
 	client.post_event(("up" if docker_status['ok'] else "down"),
 				docker_service_status.get_service(),
 				docker_status['extra'])
-		
+
 
 if __name__ == '__main__':
 	main()
-
